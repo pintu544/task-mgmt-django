@@ -1,0 +1,66 @@
+name: Django CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    name: Lint and test (Python 3.11)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_DATABASE: task_mgmt
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DJANGO_SECRET_KEY: ci-secret-key
+      DJANGO_DEBUG: "true"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: task_mgmt
+      DB_USERNAME: root
+      DB_PASSWORD: root
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system deps for mysqlclient
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-libmysqlclient-dev pkg-config build-essential
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Compile check
+        run: python -m compileall -q .
+
+      - name: Django system check
+        run: python manage.py check
+
+      - name: Run pytest
+        run: |
+          if [ -d tests ] || ls test_*.py 2>/dev/null || ls **/test_*.py 2>/dev/null; then
+            pytest -q
+          else
+            echo "No pytest tests defined yet."
+          fi

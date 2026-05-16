@@ -1,0 +1,10 @@
+Django>=4.2,<5.0
+djangorestframework>=3.14
+# mysqlclient is the preferred MySQL driver. On Windows without build tools,
+# fall back to PyMySQL and add the shim `pymysql.install_as_MySQLdb()` in
+# task_mgmt_django/__init__.py.
+mysqlclient>=2.2
+hypothesis>=6.92
+pytest-django>=4.7
+gunicorn>=21.2
+python-dotenv>=1.0
